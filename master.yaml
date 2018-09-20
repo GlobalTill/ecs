@@ -103,7 +103,7 @@ Resources:
                 DesiredCount: 2
                 ProductServiceUrl: !Join [ "/", [ !GetAtt ALB.Outputs.LoadBalancerUrl, "products" ]]
                 Listener: !GetAtt ALB.Outputs.Listener
-                Path: /p
+                Path: /
                 ECSServiceAutoScalingRoleARN: !GetAtt ECS.Outputs.ECSServiceAutoScalingRole
 
     # GlobalTillWebService:
