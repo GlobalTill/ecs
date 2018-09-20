@@ -57,6 +57,30 @@ Resources:
                 VPC: !GetAtt VPC.Outputs.VPC
                 SecurityGroup: !GetAtt SecurityGroups.Outputs.ECSHostSecurityGroup
                 Subnets: !GetAtt VPC.Outputs.PrivateSubnets
+    
+    RedisCluster:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: https://s3.amazonaws.com/globaltill-ecs/v1/infrastructure/elasticache-cluster.yaml
+            Parameters:
+                EnvironmentName: !Ref AWS::StackName
+                VPC: !GetAtt VPC.Outputs.VPC
+                Subnets: !GetAtt VPC.Outputs.PrivateSubnets
+                SecurityGroup: !GetAtt SecurityGroups.Outputs.RedisSecurityGroup
+                RedisNodeType: cache.m3.medium
+    WAF:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: https://s3.amazonaws.com/globaltill-ecs/v1/infrastructure/waf.yaml
+
+    DistributionCloudFront:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: https://s3.amazonaws.com/globaltill-ecs/v1/infrastructure/cloudfront.yaml
+            Parameters:
+                EnvironmentName: !Ref AWS::StackName
+                DomainNameALB: !GetAtt ALB.Outputs.LoadBalancerUrl
+                WebACL: !GetAtt WAF.Outputs.MyWebACL
 
     ProductService:
         Type: AWS::CloudFormation::Stack
@@ -82,18 +106,18 @@ Resources:
                 Path: /p
                 ECSServiceAutoScalingRoleARN: !GetAtt ECS.Outputs.ECSServiceAutoScalingRole
 
-    GlobalTillWebService:
-        Type: AWS::CloudFormation::Stack
-        Properties:
-            TemplateURL: https://s3.amazonaws.com/globaltill-ecs/v1/services/globaltill-web/service.yaml
-            Parameters:
-                VPC: !GetAtt VPC.Outputs.VPC
-                Cluster: !GetAtt ECS.Outputs.Cluster
-                DesiredCount: 2
-                ProductServiceUrl: !GetAtt ALB.Outputs.LoadBalancerUrl
-                Listener: !GetAtt ALB.Outputs.Listener
-                Path: /
-                ECSServiceAutoScalingRoleARN: !GetAtt ECS.Outputs.ECSServiceAutoScalingRole
+    # GlobalTillWebService:
+    #     Type: AWS::CloudFormation::Stack
+    #     Properties:
+    #         TemplateURL: https://s3.amazonaws.com/globaltill-ecs/v1/services/globaltill-web/service.yaml
+    #         Parameters:
+    #             VPC: !GetAtt VPC.Outputs.VPC
+    #             Cluster: !GetAtt ECS.Outputs.Cluster
+    #             DesiredCount: 2
+    #             ProductServiceUrl: !GetAtt ALB.Outputs.LoadBalancerUrl
+    #             Listener: !GetAtt ALB.Outputs.Listener
+    #             Path: /
+    #             ECSServiceAutoScalingRoleARN: !GetAtt ECS.Outputs.ECSServiceAutoScalingRole
 
     LifecycleHook:
         Type: AWS::CloudFormation::Stack
@@ -102,6 +126,7 @@ Resources:
             Parameters:
                 Cluster: !GetAtt ECS.Outputs.Cluster
                 ECSAutoScalingGroupName: !GetAtt ECS.Outputs.ECSAutoScalingGroupName
+
 
 Outputs:
 
@@ -112,3 +137,7 @@ Outputs:
     WebsiteServiceUrl:
         Description: The URL endpoint for the website service
         Value: !Join ["", [ !GetAtt ALB.Outputs.LoadBalancerUrl, "/" ]]
+
+    DistributionDomainName:
+        Description: Distribution Domain Name
+        Value: !GetAtt DistributionCloudFront.Outputs.DistributionDomainName
