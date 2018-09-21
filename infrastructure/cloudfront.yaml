@@ -1,0 +1,56 @@
+Description: >
+    This template deploys a CloudFront
+    
+Parameters:
+
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+    DomainNameALB:
+        Description: Domain Name of ALB
+        Type: String
+    WebACL:
+        Description: Web ACL Id
+        Type: String
+Resources:
+    Distribution:
+        Type: AWS::CloudFront::Distribution
+        Properties:
+            DistributionConfig:
+                WebACLId: !Ref WebACL
+                Origins:
+                    - DomainName: !Ref DomainNameALB
+                      Id: "myCustomOrigin"
+                      CustomOriginConfig:
+                        HTTPPort: '80'
+                        HTTPSPort: '443'
+                        OriginProtocolPolicy: http-only
+                Enabled: 'true'
+                HttpVersion: 'http2'
+                DefaultCacheBehavior:
+                    AllowedMethods:
+                        - DELETE
+                        - GET
+                        - HEAD
+                        - OPTIONS
+                        - PATCH
+                        - POST
+                        - PUT
+                    Compress: true
+                    TargetOriginId: "myCustomOrigin"
+                    ForwardedValues:
+                        QueryString: 'true'
+                        Cookies:
+                            Forward: all
+                    ViewerProtocolPolicy: allow-all
+                ViewerCertificate:
+                    CloudFrontDefaultCertificate: 'true'
+            Tags:
+                - Key: Name
+                  Value: !Ref EnvironmentName
+ 
+Outputs:
+
+    DistributionDomainName:
+        Description: A Distribution Domain Name
+        Value:  !GetAtt Distribution.DomainName

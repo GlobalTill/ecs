@@ -47,6 +47,20 @@ Resources:
                 - Key: Name
                   Value: !Sub ${EnvironmentName}-LoadBalancers
 
+    # This security group of Redis Cluster
+    RedisSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: RedisSecurityGroup
+            VpcId: !Ref VPC
+            SecurityGroupIngress:
+                # Only allow inbound access to Redis Cluster from the ECS cluster
+                - SourceSecurityGroupId: !Ref ECSHostSecurityGroup
+                  IpProtocol: -1
+            Tags:
+                - Key: Name
+                  Value: !Sub ${EnvironmentName}-ElastiCache-Cluster
+
 Outputs:
 
     ECSHostSecurityGroup:
@@ -56,3 +70,7 @@ Outputs:
     LoadBalancerSecurityGroup:
         Description: A reference to the security group for load balancers
         Value: !Ref LoadBalancerSecurityGroup
+    
+    RedisSecurityGroup:
+        Description: A reference to the security group for elasticache cluster
+        Value: !Ref RedisSecurityGroup
