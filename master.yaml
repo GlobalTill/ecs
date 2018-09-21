@@ -53,7 +53,7 @@ Resources:
             Parameters:
                 EnvironmentName: !Ref AWS::StackName
                 InstanceType: t2.large
-                ClusterSize: 4
+                ClusterSize: 2
                 VPC: !GetAtt VPC.Outputs.VPC
                 SecurityGroup: !GetAtt SecurityGroups.Outputs.ECSHostSecurityGroup
                 Subnets: !GetAtt VPC.Outputs.PrivateSubnets
@@ -82,42 +82,55 @@ Resources:
                 DomainNameALB: !GetAtt ALB.Outputs.LoadBalancerUrl
                 WebACL: !GetAtt WAF.Outputs.MyWebACL
 
-    ProductService:
-        Type: AWS::CloudFormation::Stack
-        Properties:
-            TemplateURL: https://s3.amazonaws.com/globaltill-ecs/v1/services/product-service/service.yaml
-            Parameters:
-                VPC: !GetAtt VPC.Outputs.VPC
-                Cluster: !GetAtt ECS.Outputs.Cluster
-                DesiredCount: 2
-                Listener: !GetAtt ALB.Outputs.Listener
-                Path: /products
-
-    WebsiteService:
-        Type: AWS::CloudFormation::Stack
-        Properties:
-            TemplateURL: https://s3.amazonaws.com/globaltill-ecs/v1/services/website-service/service.yaml
-            Parameters:
-                VPC: !GetAtt VPC.Outputs.VPC
-                Cluster: !GetAtt ECS.Outputs.Cluster
-                DesiredCount: 2
-                ProductServiceUrl: !Join [ "/", [ !GetAtt ALB.Outputs.LoadBalancerUrl, "products" ]]
-                Listener: !GetAtt ALB.Outputs.Listener
-                Path: /
-                ECSServiceAutoScalingRoleARN: !GetAtt ECS.Outputs.ECSServiceAutoScalingRole
-
-    # GlobalTillWebService:
+    # ProductService:
     #     Type: AWS::CloudFormation::Stack
     #     Properties:
-    #         TemplateURL: https://s3.amazonaws.com/globaltill-ecs/v1/services/globaltill-web/service.yaml
+    #         TemplateURL: https://s3.amazonaws.com/globaltill-ecs/v1/services/product-service/service.yaml
     #         Parameters:
     #             VPC: !GetAtt VPC.Outputs.VPC
     #             Cluster: !GetAtt ECS.Outputs.Cluster
     #             DesiredCount: 2
-    #             ProductServiceUrl: !GetAtt ALB.Outputs.LoadBalancerUrl
+    #             Listener: !GetAtt ALB.Outputs.Listener
+    #             Path: /products
+
+    # WebsiteService:
+    #     Type: AWS::CloudFormation::Stack
+    #     Properties:
+    #         TemplateURL: https://s3.amazonaws.com/globaltill-ecs/v1/services/website-service/service.yaml
+    #         Parameters:
+    #             VPC: !GetAtt VPC.Outputs.VPC
+    #             Cluster: !GetAtt ECS.Outputs.Cluster
+    #             DesiredCount: 2
+    #             ProductServiceUrl: !Join [ "/", [ !GetAtt ALB.Outputs.LoadBalancerUrl, "products" ]]
     #             Listener: !GetAtt ALB.Outputs.Listener
     #             Path: /
     #             ECSServiceAutoScalingRoleARN: !GetAtt ECS.Outputs.ECSServiceAutoScalingRole
+
+    GlobalTillWebService:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: https://s3.amazonaws.com/globaltill-ecs/v1/services/globaltill-web/service.yaml
+            Parameters:
+                VPC: !GetAtt VPC.Outputs.VPC
+                Cluster: !GetAtt ECS.Outputs.Cluster
+                DesiredCount: 2
+                # ProductServiceUrl: !GetAtt ALB.Outputs.LoadBalancerUrl
+                Listener: !GetAtt ALB.Outputs.Listener
+                Path: /
+                ECSServiceAutoScalingRoleARN: !GetAtt ECS.Outputs.ECSServiceAutoScalingRole
+                
+    Django:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: https://s3.amazonaws.com/globaltill-ecs/v1/services/django/service.yaml
+            Parameters:
+                VPC: !GetAtt VPC.Outputs.VPC
+                Cluster: !GetAtt ECS.Outputs.Cluster
+                DesiredCount: 2
+                # ProductServiceUrl: !GetAtt ALB.Outputs.LoadBalancerUrl
+                Listener: !GetAtt ALB.Outputs.Listener
+                Path: '*admin*'
+                ECSServiceAutoScalingRoleARN: !GetAtt ECS.Outputs.ECSServiceAutoScalingRole
 
     LifecycleHook:
         Type: AWS::CloudFormation::Stack
@@ -130,13 +143,20 @@ Resources:
 
 Outputs:
 
-    ProductServiceUrl:
-        Description: The URL endpoint for the product service
-        Value: !Join [ "/", [ !GetAtt ALB.Outputs.LoadBalancerUrl, "products" ]]
+    # ProductServiceUrl:
+    #     Description: The URL endpoint for the product service
+    #     Value: !Join [ "/", [ !GetAtt ALB.Outputs.LoadBalancerUrl, "products" ]]
 
-    WebsiteServiceUrl:
+    # WebsiteServiceUrl:
+    #     Description: The URL endpoint for the website service
+    #     Value: !Join ["", [ !GetAtt ALB.Outputs.LoadBalancerUrl, "/" ]]
+    GlobalTillWebServiceUrl:
         Description: The URL endpoint for the website service
         Value: !Join ["", [ !GetAtt ALB.Outputs.LoadBalancerUrl, "/" ]]
+
+    DjangoUrl:
+        Description: The URL endpoint for the django service
+        Value: !Join ["", [ !GetAtt ALB.Outputs.LoadBalancerUrl, "/admin/" ]]
 
     DistributionDomainName:
         Description: Distribution Domain Name

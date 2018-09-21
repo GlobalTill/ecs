@@ -28,12 +28,20 @@ Resources:
                 Enabled: 'true'
                 HttpVersion: 'http2'
                 DefaultCacheBehavior:
+                    AllowedMethods:
+                        - DELETE
+                        - GET
+                        - HEAD
+                        - OPTIONS
+                        - PATCH
+                        - POST
+                        - PUT
                     Compress: true
                     TargetOriginId: "myCustomOrigin"
                     ForwardedValues:
-                        QueryString: 'false'
+                        QueryString: 'true'
                         Cookies:
-                            Forward: none
+                            Forward: all
                     ViewerProtocolPolicy: allow-all
                 ViewerCertificate:
                     CloudFrontDefaultCertificate: 'true'
